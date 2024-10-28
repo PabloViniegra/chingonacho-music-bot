@@ -52,7 +52,7 @@ class MusicBot(commands.Cog):
             ctx.voice_client_stop()
             await ctx.send("Omitido")
             
-client = commands.Bot(command_prefix="/", intents=intents)
+client = commands.Bot(command_prefix="!", intents=intents)
 
 async def main():
     token = os.getenv('DISCORD_TOKEN')
@@ -61,3 +61,5 @@ async def main():
     
     await client.add_cog(MusicBot(client))
     await client.start(token)
+    
+asyncio.run(main())
