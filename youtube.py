@@ -3,6 +3,7 @@ import os
 import shutil
 import yt_dlp
 
+
 def give_link(name):
     s = Search(name)
     video_ids = [video.video_id for video in s.results]
@@ -11,6 +12,7 @@ def give_link(name):
         video_id = video_ids[0]
         return f"https://www.youtube.com/watch?v={video_id}"
     return None
+
 
 def download_vid(name):
     try:
@@ -36,12 +38,15 @@ def download_vid(name):
         print(f"Error downloading audio: {e}")
         return None
 
+
 def delete_audio():
     if os.path.exists('music'):
         shutil.rmtree('music')
 
+
 def find_music_name():
     return os.listdir("music")[0] if os.path.exists("music") and os.listdir("music") else None
+
 
 def remove_all_files(dir):
     for f in os.listdir(dir):

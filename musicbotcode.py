@@ -7,14 +7,14 @@ import os
 import time
 
 
-
 intents = discord.Intents.all()
 intents.members = True
 
-bot = commands.Bot(command_prefix = "!",help_command=None,intents = intents)
+bot = commands.Bot(command_prefix="!", help_command=None, intents=intents)
+
 
 @bot.event
-async def on_ready():  
+async def on_ready():
     try:
 
         print('Discord bot succesfully connected')
@@ -36,6 +36,7 @@ async def help_command(ctx):
     """
     await ctx.send(help_text)
 
+
 @bot.command()
 async def pause(ctx):
     if ctx.voice_client and ctx.voice_client.is_playing():
@@ -43,6 +44,7 @@ async def pause(ctx):
         await ctx.send("Playback paused.")
     else:
         await ctx.send('[-] An error occured: You have to be in voice channel to use this commmand')
+
 
 @bot.command()
 async def resume(ctx):
@@ -52,8 +54,9 @@ async def resume(ctx):
     else:
         await ctx.send('[-] An error occured: You have to be in voice channel to use this commmand')
 
+
 @bot.command()
-async def leave(ctx): 
+async def leave(ctx):
     if ctx.voice_client:
         await ctx.guild.voice_client.disconnect()
         await ctx.send("Lefted the voice channel")
@@ -63,13 +66,14 @@ async def leave(ctx):
     else:
         await ctx.send("[-] An Error occured: You have to be in a voice channel to run this command")
 
+
 @bot.command()
 async def join(context):
     if context.author.voice:
         channel = context.message.author.voice.channel
         try:
 
-             await channel.connect()
+            await channel.connect()
         except:
             await context.send("[-] An error occured: Couldn't connect to the channel")
 
@@ -77,10 +81,10 @@ async def join(context):
         await context.send("[-] An Error occured: You have to be in a voice channel to run this command")
 
 
-
 @bot.command(name="play")
 async def play(ctx, *, title):
-    filename = download_vid(title)  # Descargamos el video y guardamos el nombre del archivo
+    # Descargamos el video y guardamos el nombre del archivo
+    filename = download_vid(title)
     voice_channel = ctx.author.voice.channel
 
     if not ctx.voice_client:
@@ -88,8 +92,10 @@ async def play(ctx, *, title):
 
     try:
         async with ctx.typing():
-            player = discord.FFmpegPCMAudio(executable="C:\\ffmpeg\\ffmpeg.exe", source=f"music/{filename}")
-            ctx.voice_client.play(player, after=lambda e: after_playback(ctx, filename))
+            player = discord.FFmpegPCMAudio(
+                executable="C:\\ffmpeg\\ffmpeg.exe", source=f"music/{filename}")
+            ctx.voice_client.play(
+                player, after=lambda e: after_playback(ctx, filename))
         await ctx.send(f'Now playing: {filename}')
 
         while ctx.voice_client.is_playing():
@@ -104,6 +110,7 @@ def after_playback(ctx, filename):
         os.remove(f"music/{filename}")
     except Exception as e:
         print(f"Error al eliminar el archivo: {e}")
+
 
 token = os.getenv('DISCORD_TOKEN')
 if not token:
