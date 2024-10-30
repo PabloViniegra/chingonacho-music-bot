@@ -34,7 +34,7 @@ source venv/bin/activate   # On macOS/Linux
 
 3. **Install Dependencies**
 ```bash
-pip install discord.py yt-dlp pytube
+pip install -r requirements.txt
 ```
 
 4. **Install FFmpeg**
