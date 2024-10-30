@@ -59,6 +59,9 @@ cover/
 *.mo
 *.pot
 
+# Music
+music/
+
 # Django stuff:
 *.log
 local_settings.py

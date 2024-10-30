@@ -1,65 +1,111 @@
-import discord
 from discord.ext import commands
-import yt_dlp
+from discord import FFmpegPCMAudio
+from youtube import download_vid, remove_all_files
 import asyncio
+import discord
 import os
+import time
 
-intents = discord.Intents.default()
-intents.message_content = True
-intents.voice_states = True
 
-FFMPEG_OPTIONS = {'options': '-vn'}
-YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist': True}
 
-class MusicBot(commands.Cog):
-    def __init__(self, client):
-        self.client = client
-        self.queue = []
-    
-    @commands.command()
-    async def play(self, ctx, *, search):
-        voice_channel = ctx.author.voice.channel if ctx.author.voice else None
-        if not voice_channel:
-            return await ctx.send("No estás en un canal de voz empanado.")
-        if not ctx.voice_client:
-            await voice_channel.connect()
-            
+intents = discord.Intents.all()
+intents.members = True
+
+bot = commands.Bot(command_prefix = "!",help_command=None,intents = intents)
+
+@bot.event
+async def on_ready():  
+    try:
+
+        print('Discord bot succesfully connected')
+    except:
+        print("[!] Couldn't connect, an Error occured")
+
+
+@bot.command(name="help")
+async def help_command(ctx):
+    help_text = """
+**Bot Commands:**
+
+- **!join**: Connects the bot to the voice channel you're in.
+- **!leave**: Disconnects the bot from the voice channel and removes downloaded files.
+- **!play [title]**: Plays the specified song by title. Example: `!play Despacito`.
+- **!pause**: Pauses the current playback.
+- **!resume**: Resumes playback if paused.
+- **!help**: Shows this list of commands.
+    """
+    await ctx.send(help_text)
+
+@bot.command()
+async def pause(ctx):
+    if ctx.voice_client and ctx.voice_client.is_playing():
+        ctx.voice_client.pause()
+        await ctx.send("Playback paused.")
+    else:
+        await ctx.send('[-] An error occured: You have to be in voice channel to use this commmand')
+
+@bot.command()
+async def resume(ctx):
+    if ctx.voice_client and ctx.voice_client.is_paused():
+        ctx.voice_client.resume()
+        await ctx.send("Playback resumed.")
+    else:
+        await ctx.send('[-] An error occured: You have to be in voice channel to use this commmand')
+
+@bot.command()
+async def leave(ctx): 
+    if ctx.voice_client:
+        await ctx.guild.voice_client.disconnect()
+        await ctx.send("Lefted the voice channel")
+        time.sleep(1)
+        remove_all_files("music")
+
+    else:
+        await ctx.send("[-] An Error occured: You have to be in a voice channel to run this command")
+
+@bot.command()
+async def join(context):
+    if context.author.voice:
+        channel = context.message.author.voice.channel
+        try:
+
+             await channel.connect()
+        except:
+            await context.send("[-] An error occured: Couldn't connect to the channel")
+
+    else:
+        await context.send("[-] An Error occured: You have to be in a voice channel to run this command")
+
+
+
+@bot.command(name="play")
+async def play(ctx, *, title):
+    filename = download_vid(title)  # Descargamos el video y guardamos el nombre del archivo
+    voice_channel = ctx.author.voice.channel
+
+    if not ctx.voice_client:
+        await voice_channel.connect()
+
+    try:
         async with ctx.typing():
-            with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
-                info = ydl.extract_info(f"ytsearch:{search}", download=False)
-                if 'entries' in info:
-                    info = info['entries'][0]
-                url = info['url']
-                title = info['title']
-                self.queue.append((url, title))
-                await ctx.send(f'Añadido a la cola: **{title}**')
-        
-        if not ctx.voice_client.is_playing():
-            await self.play_next(ctx)
+            player = discord.FFmpegPCMAudio(executable="C:\\ffmpeg\\ffmpeg.exe", source=f"music/{filename}")
+            ctx.voice_client.play(player, after=lambda e: after_playback(ctx, filename))
+        await ctx.send(f'Now playing: {filename}')
 
-    async def play_next(self, ctx):
-        if self.queue:
-            url, title = self.queue.pop(0)
-            source = await discord.FFmpegOpusAudio.from_probe(url, **FFMPEG_OPTIONS)
-            ctx.voice_client.play(source, after=lambda _:self.client.loop.create_task(self.play_next(ctx)))
-            await ctx.send(f'Ahora esta sonando: **{title}**')
-        elif not ctx.voice_client.is_playing():
-            await ctx.send("La cola está vacía bro")
-            
-    @commands.command()
-    async def skip(self, ctx):
-        if ctx.voice_client and ctx.voice_client.is_playing():
-            ctx.voice_client_stop()
-            await ctx.send("Omitido")
-            
-client = commands.Bot(command_prefix="!", intents=intents)
+        while ctx.voice_client.is_playing():
+            await asyncio.sleep(1)
 
-async def main():
-    token = os.getenv('DISCORD_TOKEN')
-    if not token:
-        raise ValueError('No hay token de discord')
-    
-    await client.add_cog(MusicBot(client))
-    await client.start(token)
-    
-asyncio.run(main())
+    except Exception as e:
+        await ctx.send(f'Error: {e}')
+
+
+def after_playback(ctx, filename):
+    try:
+        os.remove(f"music/{filename}")
+    except Exception as e:
+        print(f"Error al eliminar el archivo: {e}")
+
+token = os.getenv('DISCORD_TOKEN')
+if not token:
+    raise ValueError("No discord token setted")
+bot.run(token)
