@@ -83,7 +83,6 @@ async def join(context):
 
 @bot.command(name="play")
 async def play(ctx, *, title):
-    # Descargamos el video y guardamos el nombre del archivo
     filename = download_vid(title)
     voice_channel = ctx.author.voice.channel
 
